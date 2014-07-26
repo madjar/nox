@@ -34,9 +34,15 @@ def search(query):
     results = [p for p in all_packages()
                if any(query in s for s in p)]
     results.sort()
-    for p in results:
-        line = '{} ({})\n  {}'.format(
+    for i, p in enumerate(results, 1):
+        line = '{} {} ({})\n    {}'.format(
+            click.style(str(i), fg='black', bg='yellow'),
             click.style(p.name, bold=True),
             click.style(p.attribute, dim=True),
             click.style(p.description))
         click.echo(line)
+
+    if results:
+        to_install = click.prompt('Package to install', type=int)
+        package = results[to_install - 1]
+        subprocess.check_call(['nix-env', '-iA', package.attribute])
