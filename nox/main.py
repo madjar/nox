@@ -44,8 +44,19 @@ def search(query):
 
     if results:
         def parse_input(inp):
-            return [results[int(i) - 1] for i in inp.split()]
-        packages = click.prompt('Packages to install',
-                                value_proc=parse_input)
-        subprocess.check_call(['nix-env', '-iA']
-                              + [p.attribute for p in packages])
+            if inp[0] == 's':
+                action = 'shell'
+                inp = inp[1:]
+            else:
+                action = 'install'
+            packages = [results[int(i) - 1] for i in inp.split()]
+            return action, packages
+
+        action, packages = click.prompt('Packages to install',
+                                        value_proc=parse_input)
+        attributes = [p.attribute for p in packages]
+        if action == 'install':
+            subprocess.check_call(['nix-env', '-iA'] + attributes)
+        elif action == 'shell':
+            attributes = [a[len('nixpkgs.'):] for a in attributes]
+            subprocess.check_call(['nix-shell', '-p'] + attributes)
