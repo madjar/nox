@@ -43,6 +43,9 @@ def search(query):
         click.echo(line)
 
     if results:
-        to_install = click.prompt('Package to install', type=int)
-        package = results[to_install - 1]
-        subprocess.check_call(['nix-env', '-iA', package.attribute])
+        def parse_input(inp):
+            return [results[int(i) - 1] for i in inp.split()]
+        packages = click.prompt('Packages to install',
+                                value_proc=parse_input)
+        subprocess.check_call(['nix-env', '-iA']
+                              + [p.attribute for p in packages])
