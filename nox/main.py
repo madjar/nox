@@ -14,6 +14,7 @@ region = make_region().configure(
 
 @region.cache_on_arguments()
 def nix_packages_json():
+    click.echo('Refreshing cache')
     output = subprocess.check_output(['nix-env', '-qa', '--json'],
                                      universal_newlines=True)
     return json.loads(output)
