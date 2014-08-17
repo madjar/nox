@@ -1,3 +1,4 @@
+import os
 import collections
 import json
 import subprocess
@@ -12,7 +13,6 @@ region = make_region().configure(
 )
 
 
-@region.cache_on_arguments()
 def nix_packages_json():
     click.echo('Refreshing cache')
     output = subprocess.check_output(['nix-env', '-qa', '--json'],
@@ -23,9 +23,24 @@ def nix_packages_json():
 Package = collections.namedtuple('Package', 'attribute name description')
 
 
+def key_for_path(path):
+    try:
+        manifest = os.path.join(path, 'manifest.nix')
+        with open(manifest) as f:
+            return f.read()
+    except FileNotFoundError:
+        pass
+    click.echo('Could not find a version indicator for {}'.format(path))
+    return None
+
+
 def all_packages():
+    defexpr = os.path.expanduser('~/.nix-defexpr/')
+    paths = os.listdir(defexpr)
+    key = str({p: key_for_path(defexpr + p) for p in paths})
+    packages_json = region.get_or_create(key, nix_packages_json)
     return (Package(attr, v['name'], v['meta'].get('description', ''))
-            for attr, v in nix_packages_json().items())
+            for attr, v in packages_json.items())
 
 
 @click.command()
