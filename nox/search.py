@@ -48,7 +48,7 @@ def all_packages():
 
 @click.command()
 @click.argument('query', default='')
-def search(query):
+def main(query):
     """Search a package in nix"""
     results = [p for p in all_packages()
                if any(query in s for s in p)]
