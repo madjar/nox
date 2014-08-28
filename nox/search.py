@@ -4,13 +4,8 @@ import json
 import subprocess
 
 import click
-from dogpile.cache import make_region
 
-region = make_region().configure(
-    'dogpile.cache.dbm',
-    expiration_time=3600,
-    arguments={'filename': '/tmp/nox.dbm'}
-)
+from .cache import region
 
 
 def nix_packages_json():
