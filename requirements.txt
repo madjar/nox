@@ -1,3 +1,4 @@
 click
 dogpile.cache
 characteristic
+requests
