@@ -32,7 +32,7 @@ build change packages, so you're sure they are not broken. There is 3 modes:
 - ``nox-review wip`` compares the nixpkgs in the current working dir
   against a commit, so you can check that your changes break
   nothing. Defaults to comparing to ``HEAD`` (the last commit), but you
-  can change: ``nox-review wip --against master^'.
+  can change: ``nox-review wip --against master^'``.
 - ``now-review pr PR`` finds the packages touched by the given PR and build them.
 
 Experimental
