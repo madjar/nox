@@ -7,6 +7,15 @@ easier.
 Nox is written in python 3 and requires nix 1.8 and git. It is
 released under MIT license.
 
+Try it
+------
+
+You can install it from nixpkgs by running ``nix-env -iA nox``.
+
+To try the last version, just clone the repository, run ``nix-build``,
+and run the resulting binaries in ``result/bin``. To install it, run
+``nix-env -if .``.
+
 Search
 ------
 
