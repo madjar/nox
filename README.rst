@@ -23,17 +23,17 @@ numbers list, a nix-shell will be started with those packages instead.
 Review
 ------
 
-The `nix-review` command helps you find what has changed nixpkgs, and
+The ``nix-review`` command helps you find what has changed nixpkgs, and
 build change packages, so you're sure they are not broken. There is 3 modes:
 
-- `nox-review revs CURRENT_REV REFERENCE_REV` find the differences
+- ``nox-review revs CURRENT_REV REFERENCE_REV`` find the differences
   between two nixpks revisions, and build those packages as they are
-  in `CURRENT_REV`
-- `nox-review wip` compares the nixpkgs in the current working dir
+  in ``CURRENT_REV``
+- ``nox-review wip`` compares the nixpkgs in the current working dir
   against a commit, so you can check that your changes break
-  nothing. Defaults to comparing to `HEAD` (the last commit), but you
-  can change: `nox-review wip --against master^'.
-- `now-review pr PR` finds the packages touched by the given PR and build them.
+  nothing. Defaults to comparing to ``HEAD`` (the last commit), but you
+  can change: ``nox-review wip --against master^'.
+- ``now-review pr PR`` finds the packages touched by the given PR and build them.
 
 Experimental
 ------------
