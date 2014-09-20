@@ -4,7 +4,8 @@ Nox
 Nox is a small tool that makes the use of the Nix package manager
 easier.
 
-Nox is written in python 3 and requires nix 1.8 and git.
+Nox is written in python 3 and requires nix 1.8 and git. It is
+released under MIT license.
 
 Search
 ------
