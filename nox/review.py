@@ -69,9 +69,17 @@ def get_nixpkgs():
     nixpkgs = nox_dir / 'nixpkgs'
     if not nixpkgs.exists():
         click.echo('Cloning nixpkgs')
-        subprocess.check_call(['git', 'clone', 'https://github.com/NixOS/nixpkgs.git', str(nixpkgs)])
-    else:
-        subprocess.check_call(['git', 'fetch'], cwd=str(nixpkgs))
+        subprocess.check_call(['git', 'init', str(nixpkgs)])
+        subprocess.check_call(['git', 'remote', 'add', 'origin', 'https://github.com/NixOS/nixpkgs.git'],
+                              cwd=str(nixpkgs))
+
+    if (Path.cwd() / '.git').exists():
+        # We're in a git repo, probably nixpkgs, let's get the objects from here before downloading them
+        subprocess.check_call(['git', 'remote', 'add', 'local', '-f', str(Path.cwd())], cwd=str(nixpkgs))
+        subprocess.check_call(['git', 'remote', 'remove', 'local'], cwd=str(nixpkgs))
+
+    # Fetch nixpkgs master
+    subprocess.check_call(['git', 'fetch', 'origin', 'master'], cwd=str(nixpkgs))
 
     # Fetch the pull requests
     subprocess.check_call(['git', 'fetch', 'origin', '+refs/pull/*/head:refs/remotes/origin/pr/*'],
