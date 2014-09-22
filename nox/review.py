@@ -96,7 +96,7 @@ def get_nixpkgs():
 
 def differences(old, new):
     """Return set of attributes that changed between two packages list"""
-    raw = old ^ new
+    raw = new - old
     # Only keep the attribute name
     return {l.split()[0] for l in raw}
 
@@ -141,7 +141,7 @@ def review_pr(pr):
     # Determine the root of the pull request
     root = subprocess.check_output(['git', 'merge-base', head, base], cwd=get_nixpkgs()).decode().strip()
 
-    attrs = differences(packages_for_sha(head),
-                        packages_for_sha(root))
+    attrs = differences(packages_for_sha(root),
+                        packages_for_sha(head))
 
     build_sha(attrs, head)
