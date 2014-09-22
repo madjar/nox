@@ -33,7 +33,7 @@ numbers list, a nix-shell will be started with those packages instead.
 Review
 ------
 
-The ``nix-review`` command helps you find what has changed nixpkgs, and
+The ``nox-review`` command helps you find what has changed nixpkgs, and
 build change packages, so you're sure they are not broken. There is 3 modes:
 
 - ``nox-review revs CURRENT_REV REFERENCE_REV`` find the differences
