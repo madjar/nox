@@ -1,3 +1,4 @@
+import sys
 import tempfile
 import subprocess
 from pathlib import Path
@@ -49,6 +50,7 @@ def build_in_path(attrs, path):
         subprocess.check_call(command, cwd=result_dir)
     except subprocess.CalledProcessError:
         click.secho('The invocation of "{}" failed'.format(' '.join(command)), fg='red')
+        sys.exit(1)
     click.echo('Result in {}'.format(click.style(result_dir, bold=True)))
     subprocess.check_call(['ls', '-l', result_dir])
 
