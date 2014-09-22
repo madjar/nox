@@ -26,7 +26,7 @@ def packages(path):
 def packages_for_sha(sha):
     """List all nix packages for the given sha"""
     nixpkgs = get_nixpkgs()
-    subprocess.check_call(['git', 'checkout', sha], cwd=nixpkgs)
+    subprocess.check_call(['git', 'checkout', '--quiet', sha], cwd=nixpkgs)
     return packages(nixpkgs)
 
 
@@ -58,12 +58,13 @@ def build_in_path(attrs, path):
 def build_sha(attrs, sha):
     """Build the given package attributs for a given sha"""
     nixpkgs = get_nixpkgs()
-    subprocess.check_call(['git', 'checkout', sha], cwd=nixpkgs)
+    subprocess.check_call(['git', 'checkout', '--quiet', sha], cwd=nixpkgs)
     build_in_path(attrs, nixpkgs)
 
 
 def get_nixpkgs():
     """Get nox's dedicated nixpkgs clone"""
+    # TODO: provide some feedback on what happens in git
     nox_dir = Path(click.get_app_dir('nox', force_posix=True))
     if not nox_dir.exists():
         nox_dir.mkdir()
@@ -71,7 +72,7 @@ def get_nixpkgs():
     nixpkgs = nox_dir / 'nixpkgs'
     if not nixpkgs.exists():
         click.echo('Cloning nixpkgs')
-        subprocess.check_call(['git', 'init', str(nixpkgs)])
+        subprocess.check_call(['git', 'init', '--quiet', str(nixpkgs)])
         subprocess.check_call(['git', 'remote', 'add', 'origin', 'https://github.com/NixOS/nixpkgs.git'],
                               cwd=str(nixpkgs))
 
@@ -79,17 +80,18 @@ def get_nixpkgs():
         # We're in a git repo, probably nixpkgs, let's get the objects from here before downloading them
         try:
             # This might fail if the clone is shallow
-            subprocess.check_call(['git', 'remote', 'add', 'local', '-f', str(Path.cwd())], cwd=str(nixpkgs))
+            subprocess.check_call(['git', 'remote', 'add', 'local', str(Path.cwd())], cwd=str(nixpkgs))
+            subprocess.check_call(['git', 'fetch', 'local', '--quiet'], cwd=str(nixpkgs))
         except:
             pass
         finally:
             subprocess.check_call(['git', 'remote', 'remove', 'local'], cwd=str(nixpkgs))
 
     # Fetch nixpkgs master
-    subprocess.check_call(['git', 'fetch', 'origin', 'master'], cwd=str(nixpkgs))
+    subprocess.check_call(['git', 'fetch', 'origin', 'master', '--quiet'], cwd=str(nixpkgs))
 
     # Fetch the pull requests
-    subprocess.check_call(['git', 'fetch', 'origin', '+refs/pull/*/head:refs/remotes/origin/pr/*'],
+    subprocess.check_call(['git', 'fetch', 'origin', '--quiet', '+refs/pull/*/head:refs/remotes/origin/pr/*'],
                           cwd=str(nixpkgs))
     return str(nixpkgs)
 
