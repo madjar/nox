@@ -124,8 +124,8 @@ def revs(current_rev, reference_rev):
 @click.option('--against', default='HEAD')
 def wip(against):
     """Build in the current dir the packages that different from AGAINST (default to HEAD)"""
-    attrs = differences(packages('.'),
-                        packages_for_sha(to_sha(against)))
+    attrs = differences(packages_for_sha(to_sha(against)),
+                        packages('.'))
 
     build_in_path(attrs, '.')
 
