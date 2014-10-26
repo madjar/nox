@@ -76,17 +76,6 @@ def get_nixpkgs():
         subprocess.check_call(['git', 'remote', 'add', 'origin', 'https://github.com/NixOS/nixpkgs.git'],
                               cwd=str(nixpkgs))
 
-    if (Path.cwd() / '.git').exists():
-        # We're in a git repo, probably nixpkgs, let's get the objects from here before downloading them
-        try:
-            # This might fail if the clone is shallow
-            subprocess.check_call(['git', 'remote', 'add', 'local', str(Path.cwd())], cwd=str(nixpkgs))
-            subprocess.check_call(['git', 'fetch', 'local', '--quiet'], cwd=str(nixpkgs))
-        except:
-            pass
-        finally:
-            subprocess.check_call(['git', 'remote', 'remove', 'local'], cwd=str(nixpkgs))
-
     # Fetch nixpkgs master
     subprocess.check_call(['git', 'fetch', 'origin', 'master', '--quiet'], cwd=str(nixpkgs))
 
