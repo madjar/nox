@@ -30,7 +30,8 @@ class Repo:
                 self.git(['fetch', str(Path.cwd()), '--update-shallow', '--quiet'])
             else:
                 click.echo("==> Old version of git detected ({}, maybe on travis),"
-                " not trying to fetch from local, fetch 50 commits from master instead")
+                " not trying to fetch from local, fetch 50 commits from master"
+                " instead".format(git_version))
                 self.git('fetch origin master --depth 50')
 
     def git(self, command, *args, cwd=None, output=False, **kwargs):
