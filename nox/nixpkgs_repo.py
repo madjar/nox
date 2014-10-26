@@ -1,3 +1,4 @@
+import os
 import subprocess
 from pathlib import Path
 
@@ -20,10 +21,17 @@ class Repo:
             self.git(['init', '--quiet', self.path], cwd=False)
             self.git('remote add origin https://github.com/NixOS/nixpkgs.git')
 
-        if (Path.cwd() / '.git').exists():
-            click.echo("==> We're in a git repo, trying to fetch it")
 
-            self.git(['fetch', str(Path.cwd()), '--update-shallow', '--quiet'])
+        if (Path.cwd() / '.git').exists():
+            git_version = self.git('version', output=True).strip()
+            if git_version >= 'git version 2':
+                click.echo("==> We're in a git repo, trying to fetch it")
+
+                self.git(['fetch', str(Path.cwd()), '--update-shallow', '--quiet'])
+            else:
+                click.echo("==> Old version of git detected ({}, maybe on travis),"
+                " not trying to fetch from local, fetch 50 commits from master instead")
+                self.git('fetch origin master --depth 50')
 
     def git(self, command, *args, cwd=None, output=False, **kwargs):
         if cwd is None:
