@@ -98,17 +98,6 @@ def cli():
     pass
 
 
-@cli.command(short_help='difference between two commits')
-@click.argument('current_rev')
-@click.argument('reference_rev')
-def revs(current_rev, reference_rev):
-    """Build in CURRENT_REV the packages that are different from REFERENCE_HEAD"""
-    attrs = differences(packages_for_sha(reference_rev),
-                        packages_for_sha(current_rev))
-
-    build_sha(attrs, current_rev)
-
-
 @cli.command(short_help='difference between working tree and a commit')
 @click.option('--against', default='HEAD')
 def wip(against):
