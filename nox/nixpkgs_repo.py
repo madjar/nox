@@ -17,9 +17,14 @@ class Repo:
         self.path = str(nixpkgs)
 
         if not nixpkgs.exists():
-            click.echo('Creating nixpkgs repo in {}'.format(nixpkgs))
+            click.echo('==> Creating nixpkgs repo in {}'.format(nixpkgs))
             self.git(['init', '--quiet', self.path], cwd=False)
             self.git('remote add origin https://github.com/NixOS/nixpkgs.git')
+
+        if (Path.cwd() / '.git').exists():
+            click.echo("==> We're in a git repo, trying to fetch it")
+
+            self.git(['fetch', str(Path.cwd()), '--unshallow', '--quiet'])
 
     def git(self, command, *args, cwd=None, output=False, **kwargs):
         if cwd is None:
