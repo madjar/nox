@@ -18,16 +18,10 @@ class Repo:
 
         if not nixpkgs.exists():
             click.echo('Creating nixpkgs repo in {}'.format(nixpkgs))
-            self._git(['init', '--quiet', self.path], cwd=False)
-            self._git('remote add origin https://github.com/NixOS/nixpkgs.git')
+            self.git(['init', '--quiet', self.path], cwd=False)
+            self.git('remote add origin https://github.com/NixOS/nixpkgs.git')
 
-        # Fetch nixpkgs master
-        self._git('fetch origin master --quiet')
-
-        # Fetch the pull requests
-        self._git('fetch origin --quiet +refs/pull/*/head:refs/remotes/origin/pr/*')
-
-    def _git(self, command, *args, cwd=None, **kwargs):
+    def git(self, command, *args, cwd=None, output=False, **kwargs):
         if cwd is None:
             cwd = self.path
         elif cwd is False:
@@ -35,18 +29,31 @@ class Repo:
         if isinstance(command, str):
             command = command.split()
         command.insert(0, 'git')
-        subprocess.check_call(command, *args, cwd=cwd, **kwargs)
+        f = subprocess.check_output if output else subprocess.check_call
+        return f(command, *args, cwd=cwd, universal_newlines=output, **kwargs)
 
 
     def packages(self):
         """List all nix packages in the repo, as a set"""
-        output = subprocess.check_output(['nix-env', '-f', path, '-qaP', '--drv-path'],
+        output = subprocess.check_output(['nix-env', '-f', self.path, '-qaP', '--drv-path'],
                                          universal_newlines=True)
         return set(output.split('\n'))
 
     def checkout(self, sha):
-        self._git(['checkout', '--quiet', sha])
+        self.git(['checkout', '--quiet', sha])
 
+    def sha(self, ref):
+        return self.git(['rev-parse', '--verify', ref], output=True).strip()
+
+    def fetch(self, ref, depth=1):
+        return self.git(['fetch', '--depth', str(depth), '--quiet',
+            'origin', '+refs/{}'.format(ref)])
+
+    def merge_base(self, first, second):
+        try:
+            return self.git(['merge-base', first, second], output=True).strip()
+        except subprocess.CalledProcessError:
+            return None
 
 _repo = None
 
@@ -58,7 +65,7 @@ def get_repo():
 
 
 @region.cache_on_arguments()
-def packages_for_sha(self, sha):
+def packages_for_sha(sha):
     """List all nix packages for the given sha"""
     repo = get_repo()
     repo.checkout(sha)

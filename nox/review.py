@@ -1,6 +1,7 @@
 import sys
 import tempfile
 import subprocess
+from pathlib import Path
 
 import click
 import requests
@@ -72,15 +73,36 @@ def wip(against):
 def review_pr(pr):
     """Build the changes induced by the given pull request"""
     payload = requests.get('https://api.github.com/repos/NixOS/nixpkgs/pulls/{}'.format(pr)).json()
-    click.echo('Reviewing PR {} : {}'.format(click.style(str(pr), bold=True),
+    click.echo('=== Reviewing PR {} : {}'.format(click.style(str(pr), bold=True),
                                              click.style(payload['title'], bold=True)))
-    head = payload['head']['sha']
-    base = payload['base']['sha']
 
-    # Determine the root of the pull request
-    root = subprocess.check_output(['git', 'merge-base', head, base], cwd=get_repo().path()).decode().strip()
+    base_ref = payload['base']['ref']
 
-    attrs = differences(packages_for_sha(root),
-                        packages_for_sha(head))
+    repo = get_repo()
 
-    build_sha(attrs, head)
+    click.echo('==> Fetching base ({})'.format(base_ref))
+    base_refspec = 'heads/{}'.format(payload['base']['ref'])
+    repo.fetch(base_refspec)
+    base = repo.sha('FETCH_HEAD')
+
+    click.echo('==> Fetching PR')
+    head_refspec = 'pull/{}/head'.format(pr)
+    repo.fetch(head_refspec)
+    head = repo.sha('FETCH_HEAD')
+
+    click.echo('==> Fetching extra history for merging')
+    depth = 10
+    while not repo.merge_base(head, base):
+        repo.fetch(base_refspec, depth=depth)
+        repo.fetch(head_refspec, depth=depth)
+        depth *=2
+
+    click.echo('==> Merging PR into base')
+    repo.checkout(base)
+    repo.git(['merge', head, '-qm', 'Nox automatic merge'])
+    merged = repo.sha('HEAD')
+
+    attrs = differences(packages_for_sha(base),
+                        packages_for_sha(merged))
+
+    build_sha(attrs, merged)
