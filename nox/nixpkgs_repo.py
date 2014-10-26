@@ -8,7 +8,6 @@ import click
 
 class Repo:
     def __init__(self):
-        # TODO: provide some feedback on what happens in git
         nox_dir = Path(click.get_app_dir('nox', force_posix=True))
         if not nox_dir.exists():
             nox_dir.mkdir()
@@ -24,7 +23,7 @@ class Repo:
         if (Path.cwd() / '.git').exists():
             click.echo("==> We're in a git repo, trying to fetch it")
 
-            self.git(['fetch', str(Path.cwd()), '--unshallow', '--quiet'])
+            self.git(['fetch', str(Path.cwd()), '--update-shallow', '--quiet'])
 
     def git(self, command, *args, cwd=None, output=False, **kwargs):
         if cwd is None:
