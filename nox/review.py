@@ -1,34 +1,16 @@
 import sys
 import tempfile
 import subprocess
-from pathlib import Path
 
 import click
 import requests
 
-from .cache import region
-
+from .nixpkgs_repo import get_repo, packages_for_sha
 
 def to_sha(commit):
     """Translate a git commit name in the current dir to a sha"""
     output = subprocess.check_output(['git', 'rev-parse', '--verify', commit])
     return output.decode().strip()
-
-
-def packages(path):
-    """List all nix packages in the given path"""
-    output = subprocess.check_output(['nix-env', '-f', path, '-qaP', '--drv-path'],
-                                     universal_newlines=True)
-    return set(output.split('\n'))
-
-
-@region.cache_on_arguments()
-def packages_for_sha(sha):
-    """List all nix packages for the given sha"""
-    nixpkgs = get_nixpkgs()
-    subprocess.check_call(['git', 'checkout', '--quiet', sha], cwd=nixpkgs)
-    return packages(nixpkgs)
-
 
 def build_in_path(attrs, path):
     """Build the given package attributes in the given nixpkgs path"""
@@ -57,32 +39,9 @@ def build_in_path(attrs, path):
 
 def build_sha(attrs, sha):
     """Build the given package attributs for a given sha"""
-    nixpkgs = get_nixpkgs()
-    subprocess.check_call(['git', 'checkout', '--quiet', sha], cwd=nixpkgs)
-    build_in_path(attrs, nixpkgs)
-
-
-def get_nixpkgs():
-    """Get nox's dedicated nixpkgs clone"""
-    # TODO: provide some feedback on what happens in git
-    nox_dir = Path(click.get_app_dir('nox', force_posix=True))
-    if not nox_dir.exists():
-        nox_dir.mkdir()
-
-    nixpkgs = nox_dir / 'nixpkgs'
-    if not nixpkgs.exists():
-        click.echo('Cloning nixpkgs')
-        subprocess.check_call(['git', 'init', '--quiet', str(nixpkgs)])
-        subprocess.check_call(['git', 'remote', 'add', 'origin', 'https://github.com/NixOS/nixpkgs.git'],
-                              cwd=str(nixpkgs))
-
-    # Fetch nixpkgs master
-    subprocess.check_call(['git', 'fetch', 'origin', 'master', '--quiet'], cwd=str(nixpkgs))
-
-    # Fetch the pull requests
-    subprocess.check_call(['git', 'fetch', 'origin', '--quiet', '+refs/pull/*/head:refs/remotes/origin/pr/*'],
-                          cwd=str(nixpkgs))
-    return str(nixpkgs)
+    repo = get_repo()
+    repo.checkout(sha)
+    build_in_path(attrs, repo.path)
 
 
 def differences(old, new):
@@ -119,7 +78,7 @@ def review_pr(pr):
     base = payload['base']['sha']
 
     # Determine the root of the pull request
-    root = subprocess.check_output(['git', 'merge-base', head, base], cwd=get_nixpkgs()).decode().strip()
+    root = subprocess.check_output(['git', 'merge-base', head, base], cwd=get_repo().path()).decode().strip()
 
     attrs = differences(packages_for_sha(root),
                         packages_for_sha(head))
