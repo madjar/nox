@@ -38,11 +38,7 @@ class Repo:
         return f(command, *args, cwd=cwd, universal_newlines=output, **kwargs)
 
 
-    def packages(self):
-        """List all nix packages in the repo, as a set"""
-        output = subprocess.check_output(['nix-env', '-f', self.path, '-qaP', '--drv-path'],
-                                         universal_newlines=True)
-        return set(output.split('\n'))
+
 
     def checkout(self, sha):
         self.git(['checkout', '--quiet', sha])
@@ -69,9 +65,16 @@ def get_repo():
     return _repo
 
 
+def packages(path):
+    """List all nix packages in the repo, as a set"""
+    output = subprocess.check_output(['nix-env', '-f', path, '-qaP', '--drv-path'],
+                                     universal_newlines=True)
+    return set(output.split('\n'))
+
+
 @region.cache_on_arguments()
 def packages_for_sha(sha):
     """List all nix packages for the given sha"""
     repo = get_repo()
     repo.checkout(sha)
-    return repo.packages()
+    return packages(repo.path)

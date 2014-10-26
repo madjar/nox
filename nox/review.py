@@ -6,12 +6,8 @@ from pathlib import Path
 import click
 import requests
 
-from .nixpkgs_repo import get_repo, packages_for_sha
+from .nixpkgs_repo import get_repo, packages, packages_for_sha
 
-def to_sha(commit):
-    """Translate a git commit name in the current dir to a sha"""
-    output = subprocess.check_output(['git', 'rev-parse', '--verify', commit])
-    return output.decode().strip()
 
 def build_in_path(attrs, path):
     """Build the given package attributes in the given nixpkgs path"""
@@ -62,7 +58,9 @@ def cli():
 @click.option('--against', default='HEAD')
 def wip(against):
     """Build in the current dir the packages that different from AGAINST (default to HEAD)"""
-    attrs = differences(packages_for_sha(to_sha(against)),
+    sha = subprocess.check_output(['git', 'rev-parse', '--verify', against]).decode().strip()
+
+    attrs = differences(packages_for_sha(sha),
                         packages('.'))
 
     build_in_path(attrs, '.')
