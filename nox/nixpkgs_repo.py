@@ -20,6 +20,8 @@ class Repo:
             click.echo('==> Creating nixpkgs repo in {}'.format(nixpkgs))
             self.git(['init', '--quiet', self.path], cwd=False)
             self.git('remote add origin https://github.com/NixOS/nixpkgs.git')
+            self.git('config user.email nox@example.com')
+            self.git('config user.name nox')
 
 
         if (Path.cwd() / '.git').exists():
