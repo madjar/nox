@@ -62,6 +62,15 @@ def wip(against):
         click.secho('"nox-review wip" must be run in a nixpkgs repository.', fg='red')
         return
 
+
+    dirty_working_tree = subprocess.call('git diff --quiet --ignore-submodules HEAD'.split())
+
+    if not dirty_working_tree:
+        if against == 'HEAD':
+            click.secho('No uncommit changes. Did you mean to use the "--against" option?')
+            return
+
+
     sha = subprocess.check_output(['git', 'rev-parse', '--verify', against]).decode().strip()
 
     attrs = differences(packages_for_sha(sha),
