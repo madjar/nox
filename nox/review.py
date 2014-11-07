@@ -58,6 +58,10 @@ def cli():
 @click.option('--against', default='HEAD')
 def wip(against):
     """Build in the current dir the packages that different from AGAINST (default to HEAD)"""
+    if not Path('pkgs/top-level/all-packages.nix').exists():
+        click.secho('"nox-review wip" must be run in a nixpkgs repository.', fg='red')
+        return
+
     sha = subprocess.check_output(['git', 'rev-parse', '--verify', against]).decode().strip()
 
     attrs = differences(packages_for_sha(sha),
