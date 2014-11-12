@@ -108,6 +108,9 @@ def review_pr(pr):
         repo.fetch(head_refspec, depth=depth)
         depth *=2
 
+    # It looks like this isn't enough for a merge, so we fetch more
+    repo.fetch(base_refspec, depth=depth)
+
     click.echo('==> Merging PR into base')
     repo.checkout(base)
     repo.git(['merge', head, '-qm', 'Nox automatic merge'])
