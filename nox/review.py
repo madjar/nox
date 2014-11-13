@@ -9,7 +9,7 @@ import requests
 from .nixpkgs_repo import get_repo, packages, packages_for_sha
 
 
-def build_in_path(attrs, path):
+def build_in_path(args, attrs, path):
     """Build the given package attributes in the given nixpkgs path"""
     if not attrs:
         click.echo('Nothing changed')
@@ -20,6 +20,7 @@ def build_in_path(attrs, path):
     click.echo('Building in {}: {}'.format(click.style(result_dir, bold=True),
                                            click.style(' '.join(attrs), bold=True)))
     command = ['nix-build']
+    command += args
     for a in attrs:
         command.append('-A')
         command.append(a)
@@ -34,11 +35,11 @@ def build_in_path(attrs, path):
     subprocess.check_call(['ls', '-l', result_dir])
 
 
-def build_sha(attrs, sha):
+def build_sha(args, attrs, sha):
     """Build the given package attributs for a given sha"""
     repo = get_repo()
     repo.checkout(sha)
-    build_in_path(attrs, repo.path)
+    build_in_path(args, attrs, repo.path)
 
 
 def differences(old, new):
@@ -49,14 +50,18 @@ def differences(old, new):
 
 
 @click.group()
-def cli():
+@click.option('--keep-going', is_flag=True, help='Keep going in case of failed builds')
+@click.pass_context
+def cli(ctx, keep_going):
     """Review a change by building the touched commits"""
-    pass
+    if keep_going:
+        ctx.obj = {'extra-args': ['--keep-going']}
 
 
 @cli.command(short_help='difference between working tree and a commit')
 @click.option('--against', default='HEAD')
-def wip(against):
+@click.pass_context
+def wip(ctx, against):
     """Build in the current dir the packages that different from AGAINST (default to HEAD)"""
     if not Path('pkgs/top-level/all-packages.nix').exists():
         click.secho('"nox-review wip" must be run in a nixpkgs repository.', fg='red')
@@ -76,12 +81,13 @@ def wip(against):
     attrs = differences(packages_for_sha(sha),
                         packages('.'))
 
-    build_in_path(attrs, '.')
+    build_in_path(ctx.obj['extra-args'], attrs, '.')
 
 
 @cli.command('pr', short_help='changes in a pull request')
 @click.argument('pr', type=click.INT)
-def review_pr(pr):
+@click.pass_context
+def review_pr(ctx, pr):
     """Build the changes induced by the given pull request"""
     payload = requests.get('https://api.github.com/repos/NixOS/nixpkgs/pulls/{}'.format(pr)).json()
     click.echo('=== Reviewing PR {} : {}'.format(click.style(str(pr), bold=True),
@@ -119,4 +125,4 @@ def review_pr(pr):
     attrs = differences(packages_for_sha(base),
                         packages_for_sha(merged))
 
-    build_sha(attrs, merged)
+    build_sha(ctx.obj['extra-args'], attrs, merged)
