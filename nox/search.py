@@ -23,12 +23,12 @@ def key_for_path(path):
         manifest = os.path.join(path, 'manifest.nix')
         with open(manifest) as f:
             return f.read()
-    except FileNotFoundError:
+    except (FileNotFoundError, NotADirectoryError):
         pass
     if os.path.exists(os.path.join(path, '.git')):
         return subprocess.check_output('git rev-parse --verify HEAD'.split(),
                                        cwd=path)
-    click.echo('Could not find a version indicator for {}'.format(path))
+    click.echo('Warning: could not find a version indicator for {}'.format(path))
     return None
 
 
