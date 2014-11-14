@@ -50,7 +50,7 @@ def differences(old, new):
 
 
 @click.group()
-@click.option('--keep-going', is_flag=True, help='Keep going in case of failed builds')
+@click.option('--keep-going', '-k', is_flag=True, help='Keep going in case of failed builds')
 @click.pass_context
 def cli(ctx, keep_going):
     """Review a change by building the touched commits"""
