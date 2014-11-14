@@ -8,10 +8,17 @@ import click
 from .cache import region
 
 
+class NixEvalError(Exception):
+    pass
+
+
 def nix_packages_json():
     click.echo('Refreshing cache')
-    output = subprocess.check_output(['nix-env', '-qa', '--json'],
-                                     universal_newlines=True)
+    try:
+        output = subprocess.check_output(['nix-env', '-qa', '--json'],
+                                         universal_newlines=True)
+    except subprocess.CalledProcessError as e:
+        raise NixEvalError from e
     return json.loads(output)
 
 
@@ -45,8 +52,11 @@ def all_packages():
 @click.argument('query', default='')
 def main(query):
     """Search a package in nix"""
-    results = [p for p in all_packages()
-               if any(query in s for s in p)]
+    try:
+        results = [p for p in all_packages()
+                   if any(query in s for s in p)]
+    except NixEvalError:
+        raise click.ClickException('An error occured while running nix (displayed above). Maybe the nixpkgs eval is broken.')
     results.sort()
     for i, p in enumerate(results, 1):
         line = '{} {} ({})\n    {}'.format(
