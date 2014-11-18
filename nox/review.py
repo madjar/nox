@@ -56,6 +56,8 @@ def cli(ctx, keep_going):
     """Review a change by building the touched commits"""
     if keep_going:
         ctx.obj = {'extra-args': ['--keep-going']}
+    else:
+        ctx.obj = {'extra-args': []}
 
 
 @cli.command(short_help='difference between working tree and a commit')
