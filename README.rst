@@ -4,7 +4,7 @@ Nox
 Nox is a small tool that makes the use of the Nix package manager
 easier.
 
-Nox is written in python 3 and requires nix 1.8 and git. It is
+Nox is written in Python 3 and requires nix 1.8 and git. It is
 released under MIT license.
 
 Try it
@@ -33,31 +33,33 @@ numbers list, a nix-shell will be started with those packages instead.
 Review
 ------
 
-The ``nox-review`` command helps you find what has changed nixpkgs, and
-build change packages, so you're sure they are not broken. There is 3 modes:
+The ``nox-review`` command helps you find what has changed in nixpkgs, and
+build changed packages, so you're sure they are not broken. There are 3 modes:
 
-- ``nox-review revs CURRENT_REV REFERENCE_REV`` find the differences
-  between two nixpks revisions, and build those packages as they are
-  in ``CURRENT_REV``
+- ``nox-review revs CURRENT_REV REFERENCE_REV`` finds the differences
+  between two nixpkgs revisions, and builds those packages as they are
+  in ``CURRENT_REV``.
 - ``nox-review wip`` compares the nixpkgs in the current working dir
   against a commit, so you can check that your changes break
   nothing. Defaults to comparing to ``HEAD`` (the last commit), but you
-  can change: ``nox-review wip --against master^'``.
-- ``now-review pr PR`` finds the packages touched by the given PR and build them.
+  can change it: ``nox-review wip --against master^'``.
+- ``nox-review pr PR`` finds the packages touched by the given PR and build
+  them.
 
 Experimental
 ------------
 
-I'm working on a new commands, ``nox-update``, that will display
-information about what is about to be update, especially giving info
-not given by nixos-rebuild:
+I'm working on a new command, ``nox-update``, that will display
+information about what is about to be updated, especially giving info
+not provided by nixos-rebuild:
 
 - Why is everything being installed?
 - Which are package upgrades?
-- Which are expression change?
-- Which are only rebuild trigerred by dependency changes?
+- Which are expression changes?
+- Which are only rebuilds trigerred by dependency changes?
 - Especially, what package triggered the rebuild?
 
-A picture is better than a thousand words, so here is what it looks like for now
+A picture is better than a thousand words, so here is what it looks like for
+now:
 
 .. image:: http://i.imgur.com/jdOGN94.png
