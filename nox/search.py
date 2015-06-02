@@ -15,7 +15,7 @@ class NixEvalError(Exception):
 def nix_packages_json():
     click.echo('Refreshing cache')
     try:
-        output = subprocess.check_output(['nix-env', '-qa', '--json'],
+        output = subprocess.check_output(['nix-env', '-qa', '--json', '--show-trace'],
                                          universal_newlines=True)
     except subprocess.CalledProcessError as e:
         raise NixEvalError from e
@@ -80,7 +80,7 @@ def main(query):
                                         value_proc=parse_input)
         attributes = [p.attribute for p in packages]
         if action == 'install':
-            subprocess.check_call(['nix-env', '-iA'] + attributes)
+            subprocess.check_call(['nix-env', '-iA', '--show-trace'] + attributes)
         elif action == 'shell':
             attributes = [a[len('nixpkgs.'):] for a in attributes]
-            subprocess.check_call(['nix-shell', '-p'] + attributes)
+            subprocess.check_call(['nix-shell', '-p', '--show-trace'] + attributes)
