@@ -65,10 +65,9 @@ def cli(ctx, keep_going):
 @click.pass_context
 def wip(ctx, against):
     """Build in the current dir the packages that different from AGAINST (default to HEAD)"""
-    if not Path('pkgs/top-level/all-packages.nix').exists():
-        click.secho('"nox-review wip" must be run in a nixpkgs repository.', fg='red')
-        return
-
+        if not Path('default.nix').exists():
+            click.secho('"nox-review wip" must be run in a nix repository.', fg='red')
+            return
 
     dirty_working_tree = subprocess.call('git diff --quiet --ignore-submodules HEAD'.split())
 
@@ -76,7 +75,6 @@ def wip(ctx, against):
         if against == 'HEAD':
             click.secho('No uncommit changes. Did you mean to use the "--against" option?')
             return
-
 
     sha = subprocess.check_output(['git', 'rev-parse', '--verify', against]).decode().strip()
 
