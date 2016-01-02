@@ -91,9 +91,11 @@ def wip(ctx, against):
 @click.pass_context
 def review_pr(ctx, pr):
     """Build the changes induced by the given pull request"""
-    payload = requests.get('https://api.github.com/repos/NixOS/nixpkgs/pulls/{}'.format(pr)).json()
-    click.echo('=== Reviewing PR {} : {}'.format(click.style(str(pr), bold=True),
-                                             click.style(payload['title'], bold=True)))
+    pr_url = 'https://api.github.com/repos/NixOS/nixpkgs/pulls/{}'.format(pr)
+    payload = requests.get(pr_url).json()
+    click.echo('=== Reviewing PR {} : {}'.format(
+               click.style(str(pr), bold=True),
+               click.style(payload.get('title', '(n/a)'), bold=True)))
 
     base_ref = payload['base']['ref']
 
