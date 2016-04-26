@@ -77,7 +77,7 @@ def get_repo():
 
 def packages(path):
     """List all nix packages in the repo, as a set"""
-    output = subprocess.check_output(['nix-env', '-f', path, '-qaP', '--drv-path', '--show-trace'],
+    output = subprocess.check_output(['nix-env', '-f', path, '-qaP', '--out-path', '--show-trace'],
                                      universal_newlines=True)
     return set(output.split('\n'))
 
