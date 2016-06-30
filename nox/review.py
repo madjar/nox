@@ -95,7 +95,14 @@ def review_pr(ctx, slug, token, pr):
     headers = {}
     if token:
         headers['Authorization'] = 'token {}'.format(token)
-    payload = requests.get(pr_url, headers=headers).json()
+    request = requests.get(pr_url, headers=headers)
+    if request.status_code == 403 and request.headers['X-RateLimit-Remaining'] == '0':
+        click.secho('You have exceeded the GitHub API rate limit. Try again in about an hour.')
+        if not token:
+            click.secho('Or try running this again, providing an access token:')
+            click.secho('$ nox-review pr --token=YOUR_TOKEN_HERE {}'.format(pr))
+        sys.exit(1)
+    payload = request.json()
     click.echo('=== Reviewing PR {} : {}'.format(
                click.style(str(pr), bold=True),
                click.style(payload.get('title', '(n/a)'), bold=True)))
