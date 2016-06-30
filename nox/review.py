@@ -86,12 +86,16 @@ def wip(ctx, against):
 
 @cli.command('pr', short_help='changes in a pull request')
 @click.option('--slug', default='NixOS/nixpkgs', help='The GitHub "slug" of the repository in the from of owner_name/repo_name.')
+@click.option('--token', help='The GitHub API token to use.')
 @click.argument('pr', type=click.INT)
 @click.pass_context
-def review_pr(ctx, slug, pr):
+def review_pr(ctx, slug, token, pr):
     """Build the changes induced by the given pull request"""
     pr_url = 'https://api.github.com/repos/{}/pulls/{}'.format(slug, pr)
-    payload = requests.get(pr_url).json()
+    headers = {}
+    if token:
+        headers['Authorization'] = 'token {}'.format(token)
+    payload = requests.get(pr_url, headers=headers).json()
     click.echo('=== Reviewing PR {} : {}'.format(
                click.style(str(pr), bold=True),
                click.style(payload.get('title', '(n/a)'), bold=True)))
