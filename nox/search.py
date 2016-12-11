@@ -50,11 +50,14 @@ def all_packages():
 
 @click.command()
 @click.argument('query', default='')
-def main(query):
+@click.option('--case-sensitive', 'case_transform', flag_value=lambda s: s)
+@click.option('--case-insensitive', 'case_transform', flag_value=lambda s: s.lower(), default=True)
+def main(query, case_transform):
     """Search a package in nix"""
+    query = case_transform(query)
     try:
         results = [p for p in all_packages()
-                   if any(query in s for s in p)]
+                   if any(query in case_transform(s) for s in p)]
     except NixEvalError:
         raise click.ClickException('An error occured while running nix (displayed above). Maybe the nixpkgs eval is broken.')
     results.sort()
