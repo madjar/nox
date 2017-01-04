@@ -52,9 +52,10 @@ def all_packages():
 @click.argument('query', default='')
 def main(query):
     """Search a package in nix"""
+    query = query.lower()
     try:
         results = [p for p in all_packages()
-                   if any(query in s for s in p)]
+                   if any(query in s.lower() for s in p)]
     except NixEvalError:
         raise click.ClickException('An error occured while running nix (displayed above). Maybe the nixpkgs eval is broken.')
     results.sort()
