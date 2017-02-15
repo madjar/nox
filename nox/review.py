@@ -1,3 +1,4 @@
+import os
 import sys
 import tempfile
 import subprocess
@@ -48,6 +49,15 @@ def differences(old, new):
     # Only keep the attribute name
     return {l.split()[0] for l in raw}
 
+def setup_nixpkgs_config(f):
+    def _(*args, **kwargs):
+        with tempfile.NamedTemporaryFile() as cfg:
+            cfg.write(b"pkgs: {}")
+            cfg.flush()
+            os.environ['NIXPKGS_CONFIG'] = cfg.name
+            f(*args, **kwargs)
+    return _
+
 
 @click.group()
 @click.option('--keep-going', '-k', is_flag=True, help='Keep going in case of failed builds')
@@ -63,6 +73,7 @@ def cli(ctx, keep_going):
 @cli.command(short_help='difference between working tree and a commit')
 @click.option('--against', default='HEAD')
 @click.pass_context
+@setup_nixpkgs_config
 def wip(ctx, against):
     """Build in the current dir the packages that different from AGAINST (default to HEAD)"""
     if not Path('default.nix').exists():
@@ -89,6 +100,7 @@ def wip(ctx, against):
 @click.option('--token', help='The GitHub API token to use.')
 @click.argument('pr', type=click.INT)
 @click.pass_context
+@setup_nixpkgs_config
 def review_pr(ctx, slug, token, pr):
     """Build the changes induced by the given pull request"""
     pr_url = 'https://api.github.com/repos/{}/pulls/{}'.format(slug, pr)
