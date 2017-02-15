@@ -36,9 +36,6 @@ Review
 The ``nox-review`` command helps you find what has changed in nixpkgs, and
 build changed packages, so you're sure they are not broken. There are 3 modes:
 
-- ``nox-review revs CURRENT_REV REFERENCE_REV`` finds the differences
-  between two nixpkgs revisions, and builds those packages as they are
-  in ``CURRENT_REV``.
 - ``nox-review wip`` compares the nixpkgs in the current working dir
   against a commit, so you can check that your changes break
   nothing. Defaults to comparing to ``HEAD`` (the last commit), but you
