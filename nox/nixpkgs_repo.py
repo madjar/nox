@@ -51,7 +51,7 @@ class Repo:
 
 
     def checkout(self, sha):
-        self.git(['checkout', '--quiet', sha])
+        self.git(['checkout', '-f', '--quiet', sha])
 
     def sha(self, ref):
         return self.git(['rev-parse', '--verify', ref], output=True).strip()
