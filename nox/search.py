@@ -64,7 +64,7 @@ def main(query):
             click.style(str(i), fg='black', bg='yellow'),
             click.style(p.name, bold=True),
             click.style(p.attribute, dim=True),
-            click.style(p.description))
+            click.style(p.description.replace("\n", "\n    ")))
         click.echo(line)
 
     if results:
