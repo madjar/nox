@@ -66,10 +66,9 @@ def main(query, force_refresh):
     except NixEvalError:
         raise click.ClickException('An error occured while running nix (displayed above). Maybe the nixpkgs eval is broken.')
     results.sort()
-    for i, p in enumerate(results, 1):
-        line = '{} {} ({})\n    {}'.format(
-            click.style(str(i), fg='black', bg='yellow'),
-            click.style(p.name, bold=True),
+    for p in results:
+        line = '{} ({})\n    {}'.format(
+            click.style(p.name, bold=True, fg="green"),
             click.style(p.attribute, dim=True),
             click.style(p.description.replace("\n", "\n    ")))
         click.echo(line)
