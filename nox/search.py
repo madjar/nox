@@ -2,6 +2,7 @@ import os
 import collections
 import json
 import subprocess
+import re
 
 import click
 
@@ -57,10 +58,11 @@ def all_packages(force_refresh=False):
 @click.option('--force-refresh', is_flag=True)
 def main(query, force_refresh):
     """Search a package in nix"""
-    query = query.lower()
+    query = re.compile(query, re.IGNORECASE)
+
     try:
-        results = [p for p in all_packages(force_refresh)
-                   if any(query in s.lower() for s in p)]
+        results = [p for p in all_packages()
+                   if any((query.search(s) for s in p))]
     except NixEvalError:
         raise click.ClickException('An error occured while running nix (displayed above). Maybe the nixpkgs eval is broken.')
     results.sort()
