@@ -54,15 +54,15 @@ def all_packages(force_refresh=False):
 
 
 @click.command()
-@click.argument('query', default='')
+@click.argument('queries', nargs=-1)
 @click.option('--force-refresh', is_flag=True)
-def main(query, force_refresh):
+def main(queries, force_refresh):
     """Search a package in nix"""
-    query = re.compile(query, re.IGNORECASE)
+    patterns = [re.compile(query, re.IGNORECASE) for query in queries]
 
     try:
-        results = [p for p in all_packages()
-                   if any((query.search(s) for s in p))]
+        results = [p for p in all_packages(force_refresh)
+                   if any((all((pat.search(s) for pat in patterns)) for s in p))]
     except NixEvalError:
         raise click.ClickException('An error occured while running nix (displayed above). Maybe the nixpkgs eval is broken.')
     results.sort()
