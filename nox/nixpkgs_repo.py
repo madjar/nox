@@ -43,7 +43,8 @@ class Repo:
             cwd = None
         if isinstance(command, str):
             command = command.split()
-        command.insert(0, 'git')
+        # suppress gpg prompt when git command tries to create/modify commit
+        command = ['git', '-c', 'commit.gpgSign=false'] + command
         f = subprocess.check_output if output else subprocess.check_call
         return f(command, *args, cwd=cwd, universal_newlines=output, **kwargs)
 
