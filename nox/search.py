@@ -39,10 +39,14 @@ def key_for_path(path):
     return None
 
 
-def all_packages():
+def all_packages(force_refresh=False):
     defexpr = os.path.expanduser('~/.nix-defexpr/')
     paths = os.listdir(defexpr)
     key = str({p: key_for_path(defexpr + p) for p in paths})
+
+    if force_refresh:
+        region.delete(key)
+
     packages_json = region.get_or_create(key, nix_packages_json)
     return (Package(attr, v['name'], v['meta'].get('description', ''))
             for attr, v in packages_json.items())
@@ -50,11 +54,12 @@ def all_packages():
 
 @click.command()
 @click.argument('query', default='')
-def main(query):
+@click.option('--force-refresh', is_flag=True)
+def main(query, force_refresh):
     """Search a package in nix"""
     query = query.lower()
     try:
-        results = [p for p in all_packages()
+        results = [p for p in all_packages(force_refresh)
                    if any(query in s.lower() for s in p)]
     except NixEvalError:
         raise click.ClickException('An error occured while running nix (displayed above). Maybe the nixpkgs eval is broken.')

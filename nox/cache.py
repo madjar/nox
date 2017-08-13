@@ -3,6 +3,6 @@ import getpass
 
 region = make_region().configure(
     'dogpile.cache.dbm',
-    expiration_time=3600,
+    expiration_time=36000,
     arguments={'filename': '/tmp/nox.dbm.'+getpass.getuser()}
 )
