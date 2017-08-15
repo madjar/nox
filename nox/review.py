@@ -98,10 +98,11 @@ def wip(ctx, against):
 @cli.command('pr', short_help='changes in a pull request')
 @click.option('--slug', default='NixOS/nixpkgs', help='The GitHub "slug" of the repository in the from of owner_name/repo_name.')
 @click.option('--token', help='The GitHub API token to use.')
+@click.option('--merge/--no-merge', default=True, help='Merge the PR against its base.')
 @click.argument('pr', type=click.INT)
 @click.pass_context
 @setup_nixpkgs_config
-def review_pr(ctx, slug, token, pr):
+def review_pr(ctx, slug, token, merge, pr):
     """Build the changes induced by the given pull request"""
     pr_url = 'https://api.github.com/repos/{}/pulls/{}'.format(slug, pr)
     headers = {}
@@ -133,22 +134,30 @@ def review_pr(ctx, slug, token, pr):
     repo.fetch(head_refspec)
     head = repo.sha('FETCH_HEAD')
 
-    click.echo('==> Fetching extra history for merging')
-    depth = 10
-    while not repo.merge_base(head, base):
+    if merge:
+        click.echo('==> Fetching extra history for merging')
+        depth = 10
+        while not repo.merge_base(head, base):
+            repo.fetch(base_refspec, depth=depth)
+            repo.fetch(head_refspec, depth=depth)
+            depth *=2
+
+        # It looks like this isn't enough for a merge, so we fetch more
         repo.fetch(base_refspec, depth=depth)
-        repo.fetch(head_refspec, depth=depth)
-        depth *=2
 
-    # It looks like this isn't enough for a merge, so we fetch more
-    repo.fetch(base_refspec, depth=depth)
+        click.echo('==> Merging PR into base')
 
-    click.echo('==> Merging PR into base')
-    repo.checkout(base)
-    repo.git(['merge', head, '-qm', 'Nox automatic merge'])
-    merged = repo.sha('HEAD')
+        repo.checkout(base)
+        repo.git(['merge', head, '-qm', 'Nox automatic merge'])
+        merged = repo.sha('HEAD')
 
-    attrs = differences(packages_for_sha(base),
-                        packages_for_sha(merged))
+        attrs = differences(packages_for_sha(base),
+                            packages_for_sha(merged))
 
-    build_sha(ctx.obj['extra-args'], attrs, merged)
+        build_sha(ctx.obj['extra-args'], attrs, merged)
+
+    else:
+        attrs = differences(packages_for_sha(payload['base']['sha']),
+                            packages_for_sha(payload['head']['sha']))
+
+        build_sha(ctx.obj['extra-args'], attrs, payload['head']['sha'])
