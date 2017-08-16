@@ -21,7 +21,10 @@ Search
 
 Just run ``nox QUERY`` to search for a nix package. The underlying
 ``nix-env`` invocation is cached to make the search faster than your
-usual ``nix-env -qa | grep QUERY``.
+usual ``nix-env -qa | grep QUERY``. In addition, package descriptions
+are searched as well as their names. You may specify multiple queries,
+in which case only packages matching all of them will be listed. Queries
+are considered as Python-style regular expressions.
 
 .. image:: screen.png
 
