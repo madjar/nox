@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 import subprocess
+import re
 from pathlib import Path
 
 import click
@@ -96,14 +97,30 @@ def wip(ctx, against):
 
 
 @cli.command('pr', short_help='changes in a pull request')
-@click.option('--slug', default='NixOS/nixpkgs', help='The GitHub "slug" of the repository in the from of owner_name/repo_name.')
+@click.option('--slug', default=None, help='The GitHub "slug" of the repository in the from of owner_name/repo_name.')
 @click.option('--token', help='The GitHub API token to use.')
 @click.option('--merge/--no-merge', default=True, help='Merge the PR against its base.')
-@click.argument('pr', type=click.INT)
+@click.argument('pr', type=click.STRING)
 @click.pass_context
 @setup_nixpkgs_config
 def review_pr(ctx, slug, token, merge, pr):
     """Build the changes induced by the given pull request"""
+
+    # Allow the 'pr' parameter to be either the numerical ID or an URL to the PR on GitHub.
+    # Also if it's an URL, parse the proper --slug argument from that.
+    m = re.match('^(?:https?://(?:www\.)?github\.com/([^/]+/[^/]+)/pull/)?([0-9]+)$', pr, re.IGNORECASE)
+    if not m:
+        click.echo("Error: parameter to 'nox-review pr' must be a valid pull request number or URL.")
+        sys.exit(1)
+    pr = m[2]
+    if m[1]:
+        if slug:
+            click.echo("Error: '--slug' option can't be used together with a pull request URL.")
+            sys.exit(1)
+        slug = m[1]
+    elif not slug:
+        slug = 'NixOS/nixpkgs'
+
     pr_url = 'https://api.github.com/repos/{}/pulls/{}'.format(slug, pr)
     headers = {}
     if token:
@@ -117,7 +134,7 @@ def review_pr(ctx, slug, token, merge, pr):
         sys.exit(1)
     payload = request.json()
     click.echo('=== Reviewing PR {} : {}'.format(
-               click.style(str(pr), bold=True),
+               click.style(pr, bold=True),
                click.style(payload.get('title', '(n/a)'), bold=True)))
 
     base_ref = payload['base']['ref']
