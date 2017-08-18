@@ -157,7 +157,10 @@ def review_pr(ctx, slug, token, merge, pr):
         build_sha(ctx.obj['extra-args'], attrs, merged)
 
     else:
-        attrs = differences(packages_for_sha(payload['base']['sha']),
+        commits = requests.get(payload['commits_url'], headers=headers).json()
+        base_sha = commits[-1]['parents'][0]['sha']
+
+        attrs = differences(packages_for_sha(base_sha),
                             packages_for_sha(payload['head']['sha']))
 
         build_sha(ctx.obj['extra-args'], attrs, payload['head']['sha'])
