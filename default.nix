@@ -1,6 +1,6 @@
 with import <nixpkgs> { };
 
-stdenv.lib.overrideDerivation nox (oldAttrs : {
+nox.overrideAttrs (oldAttrs : {
   src = ./.;
   buildInputs = oldAttrs.buildInputs ++ [ git ];
 })
