@@ -1,1 +1,10 @@
 language: nix
+deploy:
+  provider: pypi
+  user: madjar
+  password:
+    secure: pnWh9Nr4id3S3Kz5kotR6DAQXFE8Ix+H983KHW+oMSK0T5Idn27sWyU3opUdfbZBuDoVfTufNuLB8O9Z+hnTB5Ji1lo0wIyN1GP72l1F9Rmbo45k0eTRW36y54bIFcP04nf9QeSZ3dHPMFg+FN+p80HwiIzbiWJtLmTC26aqkEQ=
+  on:
+    tags: true
+  before_deploy: pip install twine
+  distributions: sdist bdist_wheel
