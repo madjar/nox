@@ -10,7 +10,18 @@ import requests
 from .nixpkgs_repo import get_repo, packages, packages_for_sha
 
 
-def build_in_path(args, attrs, path):
+def get_build_command(args, attrs, path):
+    """ Get the appropriate command to use to build the given attributes """
+    command = ['nix-build']
+    command += args
+    for a in attrs:
+        command.append('-A')
+        command.append(a)
+    command.append(path)
+    return command
+
+
+def build_in_path(args, attrs, path, dry_run=False):
     """Build the given package attributes in the given nixpkgs path"""
     if not attrs:
         click.echo('Nothing changed')
@@ -20,12 +31,13 @@ def build_in_path(args, attrs, path):
     result_dir = tempfile.mkdtemp(prefix='nox-review-')
     click.echo('Building in {}: {}'.format(click.style(result_dir, bold=True),
                                            click.style(' '.join(attrs), bold=True)))
-    command = ['nix-build']
-    command += args
-    for a in attrs:
-        command.append('-A')
-        command.append(a)
-    command.append(canonical_path)
+
+    command = get_build_command(args, attrs, canonical_path)
+
+    click.echo('Invoking {}'.format(' '.join(command)))
+
+    if dry_run:
+        return
 
     try:
         subprocess.check_call(command, cwd=result_dir)
@@ -36,11 +48,11 @@ def build_in_path(args, attrs, path):
     subprocess.check_call(['ls', '-l', result_dir])
 
 
-def build_sha(args, attrs, sha):
+def build_sha(args, attrs, sha, dry_run=False):
     """Build the given package attributs for a given sha"""
     repo = get_repo()
     repo.checkout(sha)
-    build_in_path(args, attrs, repo.path)
+    build_in_path(args, attrs, repo.path, dry_run=dry_run)
 
 
 def differences(old, new):
@@ -61,13 +73,14 @@ def setup_nixpkgs_config(f):
 
 @click.group()
 @click.option('--keep-going', '-k', is_flag=True, help='Keep going in case of failed builds')
+@click.option('--dry-run', is_flag=True, help="Don't actually build packages, just print the commands that would have been run")
 @click.pass_context
-def cli(ctx, keep_going):
+def cli(ctx, keep_going, dry_run):
     """Review a change by building the touched commits"""
+    ctx.obj = {'extra-args': []}
     if keep_going:
-        ctx.obj = {'extra-args': ['--keep-going']}
-    else:
-        ctx.obj = {'extra-args': []}
+        ctx.obj['extra-args'].append(['--keep-going'])
+    ctx.obj['dry_run'] = dry_run
 
 
 @cli.command(short_help='difference between working tree and a commit')
@@ -92,7 +105,7 @@ def wip(ctx, against):
     attrs = differences(packages_for_sha(sha),
                         packages('.'))
 
-    build_in_path(ctx.obj['extra-args'], attrs, '.')
+    build_in_path(ctx.obj['extra-args'], attrs, '.', dry_run=ctx.obj['dry_run'])
 
 
 @cli.command('pr', short_help='changes in a pull request')
@@ -154,10 +167,10 @@ def review_pr(ctx, slug, token, merge, pr):
         attrs = differences(packages_for_sha(base),
                             packages_for_sha(merged))
 
-        build_sha(ctx.obj['extra-args'], attrs, merged)
+        build_sha(ctx.obj['extra-args'], attrs, merged, dry_run=ctx.obj['dry_run'])
 
     else:
         attrs = differences(packages_for_sha(payload['base']['sha']),
                             packages_for_sha(payload['head']['sha']))
 
-        build_sha(ctx.obj['extra-args'], attrs, payload['head']['sha'])
+        build_sha(ctx.obj['extra-args'], attrs, payload['head']['sha'], dry_run=ctx.obj['dry_run'])
