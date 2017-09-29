@@ -84,7 +84,7 @@ def cli(ctx, keep_going, dry_run):
     ctx.obj['dry_run'] = dry_run
 
 
-@cli.command(short_help='difference between working tree and a commit')
+@cli.command('wip', short_help='difference between working tree and a commit')
 @click.option('--against', default='HEAD')
 @click.pass_context
 @setup_nixpkgs_config
