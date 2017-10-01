@@ -178,7 +178,7 @@ def review_pr(ctx, slug, token, merge, pr):
         click.echo('==> Merging PR into base')
 
         repo.checkout(base)
-        repo.git(['merge', head, '-qm', 'Nox automatic merge'])
+        repo.git(['merge', head, '--no-ff', '-qm', 'Nox automatic merge'])
         merged = repo.sha('HEAD')
 
         attrs = differences(packages_for_sha(base),
