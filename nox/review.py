@@ -15,10 +15,9 @@ def get_build_command(args, attrs, path):
     """ Get the appropriate command to use to build the given attributes """
     command = ['nix-build']
     command += args
-    for a in attrs:
-        command.append('-A')
-        command.append(a)
-    command.append(path)
+    command.append("-E")
+
+    command.append("with import %s {}; [ %s ]" % (path, ' '.join(attrs)))
     return command
 
 
