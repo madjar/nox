@@ -11,14 +11,19 @@ import requests
 from .nixpkgs_repo import get_repo, packages, packages_for_sha
 
 
-def get_build_command(args, attrs, path):
+def get_build_command(args):
     """ Get the appropriate command to use to build the given attributes """
     command = ['nix-build']
     command += args
     command.append("-E")
+    command.append("-")
 
-    command.append("with import %s {}; [ %s ]" % (path, ' '.join(attrs)))
     return command
+
+
+def get_build_expr(attrs, path):
+    """ Get the appropriate expression to use to build the given attributes """
+    return "with import {} {{}}; [ {} ]".format(path, ' '.join(attrs))
 
 
 def build_in_path(args, attrs, path, dry_run=False):
@@ -32,15 +37,19 @@ def build_in_path(args, attrs, path, dry_run=False):
     click.echo('Building in {}: {}'.format(click.style(result_dir, bold=True),
                                            click.style(' '.join(attrs), bold=True)))
 
-    command = get_build_command(args, attrs, canonical_path)
+    expr = get_build_expr(attrs, canonical_path)
+    command = get_build_command(args)
 
-    click.echo('Invoking {}'.format(' '.join(command)))
+    click.echo('Invoking {} with expression {}'.format(' '.join(command), expr))
 
     if dry_run:
         return
 
     try:
-        subprocess.check_call(command, cwd=result_dir)
+        with tempfile.SpooledTemporaryFile() as expr_f:
+            expr_f.write(expr.encode('utf-8'))
+            expr_f.seek(0)
+            subprocess.check_call(command, cwd=result_dir, stdin=expr_f)
     except subprocess.CalledProcessError:
         click.secho('The invocation of "{}" failed'.format(' '.join(command)), fg='red')
         sys.exit(1)
