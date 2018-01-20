@@ -80,7 +80,7 @@ def cli(ctx, keep_going, dry_run):
     """Review a change by building the touched commits"""
     ctx.obj = {'extra-args': []}
     if keep_going:
-        ctx.obj['extra-args'].append(['--keep-going'])
+        ctx.obj['extra-args'].append('--keep-going')
     ctx.obj['dry_run'] = dry_run
 
 
