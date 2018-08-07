@@ -8,59 +8,47 @@ from pathlib import Path
 import click
 import requests
 
-from .nixpkgs_repo import get_repo, packages, packages_for_sha
+from .nixpkgs_repo import get_repo, at_given_sha, get_build_commands, packages_for_sha, tests_for_sha
 
 
-def get_build_command(args, attrs, path):
-    """ Get the appropriate command to use to build the given attributes """
-    command = ['nix-build']
-    command += args
-    for a in attrs:
-        command.append('-A')
-        command.append(a)
-    command.append(path)
-    return command
-
-
-def build_in_path(args, attrs, path, dry_run=False):
+@at_given_sha
+def build_sha(path, buildables, extra_args=[], dry_run=False):
     """Build the given package attributes in the given nixpkgs path"""
-    if not attrs:
+    if not buildables:
         click.echo('Nothing changed')
         return
 
     canonical_path = str(Path(path).resolve())
     result_dir = tempfile.mkdtemp(prefix='nox-review-')
     click.echo('Building in {}: {}'.format(click.style(result_dir, bold=True),
-                                           click.style(' '.join(attrs), bold=True)))
+                                           click.style(' '.join(s.attr for s in buildables), bold=True)))
 
-    command = get_build_command(args, attrs, canonical_path)
+    for command in get_build_commands(buildables, extra_args=extra_args+["-I", "nixpkgs="+canonical_path]):
+        click.echo('Invoking {}'.format(' '.join(command)))
 
-    click.echo('Invoking {}'.format(' '.join(command)))
-
-    if dry_run:
-        return
-
-    try:
-        subprocess.check_call(command, cwd=result_dir)
-    except subprocess.CalledProcessError:
-        click.secho('The invocation of "{}" failed'.format(' '.join(command)), fg='red')
-        sys.exit(1)
-    click.echo('Result in {}'.format(click.style(result_dir, bold=True)))
-    subprocess.check_call(['ls', '-l', result_dir])
+        if not dry_run:
+            try:
+                subprocess.check_call(command, cwd=result_dir)
+            except subprocess.CalledProcessError:
+                click.secho('The invocation of "{}" failed'.format(' '.join(command)), fg='red')
+                sys.exit(1)
+            click.echo('Result in {}'.format(click.style(result_dir, bold=True)))
+            subprocess.check_call(['ls', '-l', result_dir])
 
 
-def build_sha(args, attrs, sha, dry_run=False):
-    """Build the given package attributs for a given sha"""
-    repo = get_repo()
-    repo.checkout(sha)
-    build_in_path(args, attrs, repo.path, dry_run=dry_run)
+def build_difference(old_sha, new_sha, extra_args=[], with_tests=False, disable_test_blacklist=False, dry_run=False):
+    click.echo("Listing old packages...")
+    before = packages_for_sha(old_sha)
+    if with_tests:
+        click.echo("Listing old tests...")
+        before |= tests_for_sha(old_sha, disable_test_blacklist)
+    click.echo("Listing new packages...")
+    after = packages_for_sha(new_sha)
+    if with_tests:
+        click.echo("Listing new tests...")
+        after |= tests_for_sha(new_sha, disable_test_blacklist)
+    build_sha(new_sha, after-before, extra_args, dry_run)
 
-
-def differences(old, new):
-    """Return set of attributes that changed between two packages list"""
-    raw = new - old
-    # Only keep the attribute name
-    return {l.split()[0] for l in raw}
 
 def setup_nixpkgs_config(f):
     def _(*args, **kwargs):
@@ -75,13 +63,17 @@ def setup_nixpkgs_config(f):
 @click.group()
 @click.option('--keep-going', '-k', is_flag=True, help='Keep going in case of failed builds')
 @click.option('--dry-run', is_flag=True, help="Don't actually build packages, just print the commands that would have been run")
+@click.option('--with-tests', is_flag=True, help="Also rebuild affected NixOS tests")
+@click.option('--all-tests', is_flag=True, help="Do not blacklist tests known to be false positives")
 @click.pass_context
-def cli(ctx, keep_going, dry_run):
+def cli(ctx, keep_going, dry_run, with_tests, all_tests):
     """Review a change by building the touched commits"""
     ctx.obj = {'extra-args': []}
     if keep_going:
-        ctx.obj['extra-args'].append(['--keep-going'])
+        ctx.obj['extra-args'].append('--keep-going')
     ctx.obj['dry_run'] = dry_run
+    ctx.obj['tests'] = with_tests
+    ctx.obj['no-blacklist'] = all_tests
 
 
 @cli.command(short_help='difference between working tree and a commit')
@@ -103,10 +95,7 @@ def wip(ctx, against):
 
     sha = subprocess.check_output(['git', 'rev-parse', '--verify', against]).decode().strip()
 
-    attrs = differences(packages_for_sha(sha),
-                        packages('.'))
-
-    build_in_path(ctx.obj['extra-args'], attrs, '.', dry_run=ctx.obj['dry_run'])
+    build_difference(sha, None, extra_args=ctx.obj['extra-args'], with_tests=ctx.obj["tests"], disable_test_blacklist=ctx.obj["no-blacklist"], dry_run=ctx.obj['dry_run'])
 
 
 @cli.command('pr', short_help='changes in a pull request')
@@ -170,7 +159,7 @@ def review_pr(ctx, slug, token, merge, pr):
         while not repo.merge_base(head, base):
             repo.fetch(base_refspec, depth=depth)
             repo.fetch(head_refspec, depth=depth)
-            depth *=2
+            depth *= 2
 
         # It looks like this isn't enough for a merge, so we fetch more
         repo.fetch(base_refspec, depth=depth)
@@ -181,16 +170,12 @@ def review_pr(ctx, slug, token, merge, pr):
         repo.git(['merge', head, '--no-ff', '-qm', 'Nox automatic merge'])
         merged = repo.sha('HEAD')
 
-        attrs = differences(packages_for_sha(base),
-                            packages_for_sha(merged))
-
-        build_sha(ctx.obj['extra-args'], attrs, merged, dry_run=ctx.obj['dry_run'])
+        old = base
+        new = merged
 
     else:
         commits = requests.get(payload['commits_url'], headers=headers).json()
-        base_sha = commits[-1]['parents'][0]['sha']
+        old = commits[-1]['parents'][0]['sha']
+        new = payload['head']['sha']
 
-        attrs = differences(packages_for_sha(base_sha),
-                            packages_for_sha(payload['head']['sha']))
-
-        build_sha(ctx.obj['extra-args'], attrs, payload['head']['sha'], dry_run=ctx.obj['dry_run'])
+    build_difference(old, new, extra_args=ctx.obj['extra-args'], with_tests=ctx.obj["tests"], disable_test_blacklist=ctx.obj["no-blacklist"], dry_run=ctx.obj['dry_run'])
