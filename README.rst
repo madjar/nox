@@ -43,8 +43,9 @@ build changed packages, so you're sure they are not broken. There are 3 modes:
   against a commit, so you can check that your changes break
   nothing. Defaults to comparing to ``HEAD`` (the last commit), but you
   can change it: ``nox-review wip --against master^'``.
-- ``nox-review pr PR`` finds the packages touched by the given PR and build
-  them.
+- ``nox-review pr PR`` finds the packages touched by the given PR and builds
+  them. This onvocation involves clonning/fetching/merging of NixPkgs repo
+  into ``~/.nox/nixpkgs``, so takes some more time to run.
 
 Experimental
 ------------
