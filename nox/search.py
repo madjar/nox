@@ -49,7 +49,7 @@ def all_packages(force_refresh=False):
         region.delete(key)
 
     packages_json = region.get_or_create(key, nix_packages_json)
-    return (Package(attr, v['name'], v['meta'].get('description', ''))
+    return (Package(attr, v['name'], v.get('meta', {}).get('description', ''))
             for attr, v in packages_json.items())
 
 
