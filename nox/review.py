@@ -76,7 +76,7 @@ def cli(ctx, keep_going, dry_run, with_tests, all_tests):
     ctx.obj['no-blacklist'] = all_tests
 
 
-@cli.command(short_help='difference between working tree and a commit')
+@cli.command('wip', short_help='difference between working tree and a commit')
 @click.option('--against', default='HEAD')
 @click.pass_context
 @setup_nixpkgs_config
