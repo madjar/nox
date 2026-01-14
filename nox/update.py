@@ -1,3 +1,4 @@
+import attrs
 import click
 import re
 import subprocess
@@ -6,15 +7,17 @@ from enum import Enum
 from bisect import bisect
 from pkg_resources import parse_version
 from pathlib import Path
-from characteristic import attributes
 from collections import defaultdict
 
 def query(*args):
     return subprocess.check_output(['nix-store', '--query'] + list(args),
                                    universal_newlines=True)
 
-@attributes(['full_name', 'path'], apply_with_init=False)
+@attrs.define(init=False)
 class NixPath:
+    full_name: str = attrs.field(default=None)
+    path: str = attrs.field(default=None)
+
     def __init__(self, path):
         self.path = path
         self.is_drv = self.path.endswith('.drv')
